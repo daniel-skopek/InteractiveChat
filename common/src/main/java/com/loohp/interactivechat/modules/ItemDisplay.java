@@ -185,7 +185,7 @@ public class ItemDisplay {
 
         String itemJson = ItemNBTUtils.getNMSItemStackJson(item);
         ItemStack trimmedItem = null;
-        if (InteractiveChat.sendOriginalIfTooLong && itemJson.length() > InteractiveChat.itemTagMaxLength) {
+        if (useInventoryView(item) || (InteractiveChat.sendOriginalIfTooLong && itemJson.length() > InteractiveChat.itemTagMaxLength)) {
             trimmedItem = new ItemStack(item.getType());
             trimmedItem.addUnsafeEnchantments(item.getEnchantments());
             if (itemMeta != null && itemMeta.hasDisplayName()) {
@@ -222,6 +222,8 @@ public class ItemDisplay {
                 showHover = false;
             }
             Map<Key, DataComponentValue> dataComponents = ItemNBTUtils.getNMSItemStackDataComponents(trimmedItem == null ? item : trimmedItem);
+            dataComponents.remove(Key.key("minecraft", "container"));
+            dataComponents.remove(Key.key("minecraft", "bundle_contents"));
             showItem = dataComponents.isEmpty() ? ShowItem.showItem(key, itemAmount) : ShowItem.showItem(key, itemAmount, dataComponents);
         } else {
             String tag = ItemNBTUtils.getNMSItemStackTag(trimmedItem == null ? item : trimmedItem);
