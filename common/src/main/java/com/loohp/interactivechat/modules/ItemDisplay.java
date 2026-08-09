@@ -48,11 +48,14 @@ import com.loohp.interactivechat.utils.PlayerUtils;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.nbt.api.BinaryTagHolder;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.TextReplacementConfig;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.DataComponentValue;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.event.HoverEvent.ShowItem;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -66,6 +69,8 @@ import org.bukkit.inventory.meta.BlockStateMeta;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -211,7 +216,18 @@ public class ItemDisplay {
         }
 
         String amountString = "";
-        Component itemDisplayNameComponent = ItemStackUtils.getDisplayName(item);
+        Component itemDisplayNameComponent = ItemStackUtils.getDisplayName(item, false);
+        List<Component> flattened = ComponentFlattening.flatten(itemDisplayNameComponent).children();
+        List<Component> cleaned = new ArrayList<>(flattened.size());
+        for (Component child : flattened) {
+            if (child instanceof TextComponent) {
+                TextComponent text = (TextComponent) child;
+                cleaned.add(text.content(ChatColorUtils.stripColor(text.content())));
+            } else {
+                cleaned.add(child);
+            }
+        }
+        itemDisplayNameComponent = ComponentCompacting.optimize(Component.empty().children(cleaned));
 
         amountString = String.valueOf(itemAmount);
         Key key = ItemNBTUtils.getNMSItemStackNamespacedKey(item);
@@ -311,7 +327,15 @@ public class ItemDisplay {
         }
 
         Component itemDisplayComponent = PlaceholderParser.parse(player, itemAmount == 1 ? InteractiveChat.itemSingularReplaceText : InteractiveChat.itemReplaceText.replaceText(TextReplacementConfig.builder().matchLiteral("{Amount}").replacement(Component.text(amountString)).build()));
-        itemDisplayComponent = itemDisplayComponent.replaceText(TextReplacementConfig.builder().matchLiteral("{Item}").replacement(itemDisplayNameComponent).build());
+        TextColor templateColor = NamedTextColor.WHITE;
+        for (Component child : ComponentFlattening.flatten(itemDisplayComponent).children()) {
+            TextColor color = child.color();
+            if (color != null) {
+                templateColor = color;
+                break;
+            }
+        }
+        itemDisplayComponent = itemDisplayComponent.replaceText(TextReplacementConfig.builder().matchLiteral("{Item}").replacement(itemDisplayNameComponent.colorIfAbsent(templateColor)).build());
         if (showHover) {
             itemDisplayComponent = itemDisplayComponent.hoverEvent(hoverEvent);
         } else if (alternativeHover != null) {
