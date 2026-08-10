@@ -35,6 +35,7 @@ import com.loohp.interactivechat.utils.CompassUtils;
 import com.loohp.interactivechat.utils.ComponentCompacting;
 import com.loohp.interactivechat.utils.ComponentFlattening;
 import com.loohp.interactivechat.utils.ComponentReplacing;
+import com.loohp.interactivechat.utils.ComponentStyling;
 import com.loohp.interactivechat.utils.ComponentUtils;
 import com.loohp.interactivechat.utils.FilledMapUtils;
 import com.loohp.interactivechat.utils.HashUtils;
@@ -222,12 +223,17 @@ public class ItemDisplay {
         for (Component child : flattened) {
             if (child instanceof TextComponent) {
                 TextComponent text = (TextComponent) child;
-                cleaned.add(text.content(ChatColorUtils.stripColor(text.content())));
+                cleaned.add(text.content(ChatColorUtils.escapeMiniMessageTags(ChatColorUtils.stripColor(text.content()))));
             } else {
                 cleaned.add(child);
             }
         }
         itemDisplayNameComponent = ComponentCompacting.optimize(Component.empty().children(cleaned));
+
+        ItemStack hoverItem = (trimmedItem == null ? item : trimmedItem).clone();
+        if (itemMeta != null && itemMeta.hasDisplayName()) {
+            NMS.getInstance().setItemStackDisplayName(hoverItem, ComponentStyling.stripColor(itemDisplayNameComponent));
+        }
 
         amountString = String.valueOf(itemAmount);
         Key key = ItemNBTUtils.getNMSItemStackNamespacedKey(item);
@@ -237,12 +243,12 @@ public class ItemDisplay {
             if (item.getType().equals(Material.AIR)) {
                 showHover = false;
             }
-            Map<Key, DataComponentValue> dataComponents = ItemNBTUtils.getNMSItemStackDataComponents(trimmedItem == null ? item : trimmedItem);
+            Map<Key, DataComponentValue> dataComponents = ItemNBTUtils.getNMSItemStackDataComponents(hoverItem);
             dataComponents.remove(Key.key("minecraft", "container"));
             dataComponents.remove(Key.key("minecraft", "bundle_contents"));
             showItem = dataComponents.isEmpty() ? ShowItem.showItem(key, itemAmount) : ShowItem.showItem(key, itemAmount, dataComponents);
         } else {
-            String tag = ItemNBTUtils.getNMSItemStackTag(trimmedItem == null ? item : trimmedItem);
+            String tag = ItemNBTUtils.getNMSItemStackTag(hoverItem);
             showItem = tag == null ? ShowItem.showItem(key, itemAmount) : ShowItem.showItem(key, itemAmount, BinaryTagHolder.binaryTagHolder(tag));
         }
 
