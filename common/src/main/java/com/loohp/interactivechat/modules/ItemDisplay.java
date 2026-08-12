@@ -31,6 +31,7 @@ import com.loohp.interactivechat.objectholders.ICInventoryHolder;
 import com.loohp.interactivechat.objectholders.ICPlayer;
 import com.loohp.interactivechat.objectholders.OfflineICPlayer;
 import com.loohp.interactivechat.utils.ChatColorUtils;
+import com.loohp.interactivechat.utils.ColorUtils;
 import com.loohp.interactivechat.utils.CompassUtils;
 import com.loohp.interactivechat.utils.ComponentCompacting;
 import com.loohp.interactivechat.utils.ComponentFlattening;
@@ -229,6 +230,11 @@ public class ItemDisplay {
             }
         }
         itemDisplayNameComponent = ComponentCompacting.optimize(Component.empty().children(cleaned));
+
+        ChatColor rarity = NMS.getInstance().getRarityColor(item);
+        if (rarity != null) {
+            itemDisplayNameComponent = itemDisplayNameComponent.colorIfAbsent(ColorUtils.toTextColor(rarity));
+        }
 
         ItemStack hoverItem = (trimmedItem == null ? item : trimmedItem).clone();
         if (itemMeta != null && itemMeta.hasDisplayName()) {
